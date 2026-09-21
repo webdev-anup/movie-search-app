@@ -1,6 +1,10 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import "./movieApp.css";
-import { IoSearchSharp } from "react-icons/io5";
 import axios from "axios";
 import debounce from "lodash.debounce";
 import SearchBar from "./SearchBar";
@@ -28,24 +32,32 @@ const MovieRecommendations = () => {
       try {
         const response = await axios.get(
           "https://api.themoviedb.org/3/genre/movie/list",
-          { params: { api_key: "0fa2853e7c4d6c8f146aba861c5e4a06" } }
+          {
+            params: {
+              api_key: "0fa2853e7c4d6c8f146aba861c5e4a06",
+            },
+          }
         );
+
         setGenres(response.data.genres);
-      } catch (e) {
+      } catch {
         setError("Failed to load genres");
       }
     };
+
     fetchGenres();
   }, []);
 
-  // Centralised fetch for movies – runs on search, sort, genre changes
+  // Centralised fetch for movies
   const fetchMovies = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+
     try {
       const endpoint = searchQuery
         ? "https://api.themoviedb.org/3/search/movie"
         : "https://api.themoviedb.org/3/discover/movie";
+
       const response = await axios.get(endpoint, {
         params: {
           api_key: "0fa2853e7c4d6c8f146aba861c5e4a06",
@@ -55,8 +67,9 @@ const MovieRecommendations = () => {
           page: 1,
         },
       });
+
       setMovies(response.data.results);
-    } catch (e) {
+    } catch {
       setError("Failed to fetch movies");
     } finally {
       setIsLoading(false);
@@ -69,22 +82,35 @@ const MovieRecommendations = () => {
   }, [fetchMovies]);
 
   // Debounced search input handler
-  const debouncedSetSearch = useCallback(
-    debounce((value) => setSearchQuery(value), 300),
+  const debouncedSetSearch = useMemo(
+    () => debounce((value) => setSearchQuery(value), 300),
     []
   );
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSetSearch.cancel();
+    };
+  }, [debouncedSetSearch]);
 
   const handleSearchChange = (e) => {
     debouncedSetSearch(e.target.value);
   };
 
-  const handleSortChange = (e) => setSortBy(e.target.value);
-  const handleGenreChange = (e) => setSelectedGenre(e.target.value);
+  const handleSortChange = (e) => {
+    setSortBy(e.target.value);
+  };
+
+  const handleGenreChange = (e) => {
+    setSelectedGenre(e.target.value);
+  };
 
   const openModal = (movie) => {
     setSelectedMovie(movie);
     setShowModal(true);
   };
+
   const closeModal = () => {
     setShowModal(false);
     setSelectedMovie(null);
@@ -93,7 +119,9 @@ const MovieRecommendations = () => {
   return (
     <div className="movie-app">
       <h1>MovieHouse</h1>
+
       <SearchBar onChange={handleSearchChange} />
+
       <FiltersBar
         sortBy={sortBy}
         onSortChange={handleSortChange}
@@ -103,16 +131,25 @@ const MovieRecommendations = () => {
       />
 
       {isLoading && <div className="spinner" />}
+
       {error && <div className="error-banner">{error}</div>}
 
       <div className="movie-wrapper">
         {movies.map((movie) => (
-          <MovieCard key={movie.id} movie={movie} onReadMore={() => openModal(movie)} />
+          <MovieCard
+            key={movie.id}
+            movie={movie}
+            onReadMore={() => openModal(movie)}
+          />
         ))}
       </div>
 
       {showModal && selectedMovie && (
-        <MovieModal movie={selectedMovie} isOpen={showModal} onRequestClose={closeModal} />
+        <MovieModal
+          movie={selectedMovie}
+          isOpen={showModal}
+          onRequestClose={closeModal}
+        />
       )}
     </div>
   );
