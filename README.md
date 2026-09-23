@@ -27,7 +27,10 @@ Production Build
 bash
 
 npm run build
-The optimized files are placed in the build folder.
+The optimized files are placed in the build folder.\
+
+# Live Link
+#https://movie-search-app-anup09.vercel.app/
 
 Notes
 The API key is currently hard‑coded for simplicity; consider moving it to environment variables for production.
